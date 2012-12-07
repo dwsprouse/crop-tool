@@ -3,11 +3,18 @@
 <head>
 	<title>Canvas Test</title>
 	<script src="js/jquery-1.8.3.min.js" type="text/javascript"></script>
+	<style type="text/css" media="screen">
+		body {
+			overflow: hidden;
+		}
+	</style>
 </head>
 <body>
 	<canvas id="myCanvas" style="border:1px solid #000000;">></canvas>
 	<label for="Translate">Translate</label>
 	<input type="radio" name="action" id="translate" value="Translate" />
+	<label for="Scale">Scale</label>
+	<input type="radio" name="action" id="scale" value="Scale" />
 	<label for="Select">Select</label>
 	<input type="radio" name="action" id="select" value="Select" />
 	<div id="info1"></div>
