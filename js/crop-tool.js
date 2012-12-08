@@ -24,8 +24,6 @@
 			width: 0,
 			height: 0,
 			//aspect: (16/9),
-			offsetX: 0,
-			offsetY: 0,
 			exists: false
 		};
 		select.numHandles = select.aspect ? 4 : 8;
@@ -75,14 +73,14 @@
 			image.aspectRatio = image.width/image.height;
 			
 			//Size and position image to fit image inside canvas
-			var scaleToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
-			image.adjW = scaleToFit.width;
-			image.adjH = scaleToFit.height;
-			image.x = scaleToFit.x;
-			image.y = scaleToFit.y;
+			var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
+			image.adjW = zoomToFit.width;
+			image.adjH = zoomToFit.height;
+			image.x = zoomToFit.x;
+			image.y = zoomToFit.y;
 			
-			//Define initial scale of image
-			image.scale = image.adjW/image.width; // or could be = image.adjH/image.height;
+			//Define initial zoom of image
+			image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
 			drawCanvas();
 		}
 		
@@ -104,19 +102,31 @@
 			canvas.width = window.innerWidth - 20;	
 			canvas.height = window.innerHeight - 120;
 			
-			image.adjW = image.scale * image.width; 
-			image.adjH = image.scale * image.height;
+			if(document.getElementById('zoomToFit').checked) {
+			  	var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
+				image.adjW = zoomToFit.width;
+				image.adjH = zoomToFit.height;
+				image.x = zoomToFit.x;
+				image.y = zoomToFit.y;
+				image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
+		 	} else {
+				image.adjW = image.zoom * image.width; 
+				image.adjH = image.zoom * image.height;
 			
-			if (image.x < 0) {
-				image.x = (image.x + image.adjW) < canvas.width ? canvas.width - image.adjW : image.x;
-			} else {
- 				image.x = image.adjW < canvas.width ? (canvas.width - image.adjW)/2 : 0; 
+				if (image.x < 0) {
+					image.x = (image.x + image.adjW) < canvas.width ? canvas.width - image.adjW : image.x;
+				} else {
+	 				image.x = image.adjW < canvas.width ? (canvas.width - image.adjW)/2 : 0; 
+				}
+				
+				if (image.y < 0) {
+					image.y = (image.y + image.adjH) < canvas.height ? canvas.height - image.adjH : image.y;
+				} else {
+	 				image.y = image.adjH < canvas.height ? (canvas.height - image.adjH)/2 : 0; 
+				}
+				
 			}
-			if (image.y < 0) {
-				image.y = (image.y + image.adjH) < canvas.height ? canvas.height - image.adjH : image.y;
-			} else {
- 				image.y = image.adjH < canvas.height ? (canvas.height - image.adjH)/2 : 0; 
-			}
+			
 			drawCanvas();
 		});
 
@@ -133,9 +143,13 @@
 			  action = "select";
 			} else if(document.getElementById('translate').checked) {
 			  action = "translate";
-			 }else if(document.getElementById('scale').checked) {
-			  action = "zoomIn";
+			 }else if(document.getElementById('zoom').checked) {
+			  action = "zoom";
+			}else if(document.getElementById('zoomToFit').checked) {
+			  action = "zoomToFit";
 			}
+			
+			console.log (action);
 			
 			switch(action) {
 				case "select":
@@ -160,12 +174,18 @@
 				case "translate":
 					translateCanvas();
 					break;
-				case "zoomIn":
-					scaleCanvas();
-				
-					break;
-				case "zoomOut":
-					break;		
+				case "zoom":
+					zoomCanvas(event);
+					break;	
+				case "zoomToFit":
+					var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
+					image.adjW = zoomToFit.width;
+					image.adjH = zoomToFit.height;
+					image.x = zoomToFit.x;
+					image.y = zoomToFit.y;
+					image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
+					drawCanvas();
+					break;	
 			}
 		});
 		
@@ -201,59 +221,83 @@
 		
 		function translateCanvas() {
 			getMousePosition();
-			var selectOffsetX = select.x - mouse.x;
-			var selectOffsetY = select.y - mouse.y;
 			var imgOffsetX = image.x - mouse.x;
 			var imgOffsetY = image.y - mouse.y;
 			$(document)
 			.bind("mousemove.translate", function() {
 				getMousePosition();
-				select.x = mouse.x + selectOffsetX;
-				select.y = mouse.y + selectOffsetY;
 				image.x = mouse.x + imgOffsetX;
 				image.y = mouse.y + imgOffsetY;
+				
+				if (image.x < 0) {
+					if (image.adjW + image.x > canvas.width) {
+						image.x = image.x;
+					} else {
+						image.x = image.adjW > canvas.width ? canvas.width - image.adjW : canvas.width/2 - image.adjW/2;
+						imgOffsetX = image.x - mouse.x;
+					}
+				} else {
+	 				image.x = image.adjW < canvas.width ? canvas.width/2 - image.adjW/2 : 0; 
+					imgOffsetX = image.x - mouse.x;
+				}
+				if (image.y < 0) {
+					if (image.adjH + image.y > canvas.height) {
+						image.y = image.y;
+					} else {
+						image.y = image.adjH > canvas.height ? canvas.height - image.adjH : canvas.height/2 - image.adjH/2;
+						imgOffsetY = image.y - mouse.y
+					}
+				} else {
+	 				image.y = image.adjH < canvas.height ? canvas.height/2 - image.adjH/2 : 0;
+					imgOffsetY = image.y - mouse.y
+				}
+				
 				drawCanvas();
 			})
 			.bind("mouseup.translate", function() {$(document).unbind(".translate");});
 		}
 	
-		/////////////
-		/// Scale ///
-		/////////////
+		////////////
+		/// Zoom ///
+		////////////
 		
-		//Scales image perfectly
-		function scaleCanvas() {
-			var multiplier = 1.1;
+		function zoomCanvas(event) {
+			var multiplier = (event.altKey || event.shiftKey) ? 0.95 : 1.05;
 			
-			image.adjTempW = image.scale * image.width;
-			image.adjTempH = image.scale * image.height; 
-			image.scale *= multiplier;
-			image.adjW = image.scale * image.width;
-			image.adjH = image.scale * image.height;
+			image.adjTempW = image.zoom * image.width;
+			image.adjTempH = image.zoom * image.height; 
+			image.zoom *= multiplier;
+			image.adjW = image.zoom * image.width;
+			image.adjH = image.zoom * image.height;
 
-			image.tempX = canvas.width / 2 - ((canvas.width / 2 - image.x) * (image.adjW / image.adjTempW));
-			image.tempY = canvas.height / 2 - ((canvas.height / 2 - image.y) * (image.adjH / image.adjTempH));
+			image.tempX = canvas.width/2 - ((canvas.width/2 - image.x) * image.adjW / image.adjTempW);
+			image.tempY = canvas.height/2 - ((canvas.height/2 - image.y) * image.adjH / image.adjTempH);
 
 			if (multiplier >= 1) {
 			image.x = image.tempX;
 			image.y = image.tempY;
 			} else {
 				if (image.tempX < 0) {
-					image.x = image.adjW > canvas.width ? canvas.width - image.adjW : (canvas.width - image.adjW)/2;
+					if ((image.adjW + image.tempX)  > canvas.width) {
+						image.x = image.tempX;
+					} else {
+						image.x = image.adjW > canvas.width ? canvas.width - image.adjW : canvas.width/2 - image.adjW/2;
+					}
 				} else {
-	 				image.x = image.adjW < canvas.width ? (canvas.width - image.adjW)/2 : 0; 
+	 				image.x = image.adjW < canvas.width ? canvas.width/2 - image.adjW/2 : 0; 
 				}
-				
 				if (image.tempY < 0) {
-					image.y = image.adjH > canvas.height ? canvas.height - image.adjH : (canvas.height - image.adjH)/2;
+					if ((image.adjH + image.tempY)  > canvas.height) {
+						image.y = image.tempY;
+					} else {
+						image.y = image.adjH > canvas.height ? canvas.height - image.adjH : canvas.height/2 - image.adjH/2;
+					}
 				} else {
-	 				image.y = image.adjH < canvas.height ? (canvas.height - image.adjH)/2 : 0; 
+	 				image.y = image.adjH < canvas.height ? canvas.height/2 - image.adjH/2 : 0; 
 				}
 			}
 			drawCanvas();
 		}
-
-		
 		
 		//////////////
 		/// Select ///
