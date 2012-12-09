@@ -24,7 +24,8 @@
 			width: 0,
 			height: 0,
 			//aspect: (16/9),
-			exists: false
+			exists: false,
+			aspectMod: 1
 		};
 		select.numHandles = select.aspect ? 4 : 8;
 		
@@ -143,11 +144,6 @@
 		});
 
 		$(canvas).mousedown(function(){
-			var result = translateCoords(select.x, select.y, select.width, select.height);
-			select.x = result.x;
-			select.y = result.y;
-			select.width = result.width;
-			select.height = result.height;
 			
 			if(document.getElementById('select').checked) {
 			  action = "select";
@@ -159,8 +155,6 @@
 			  action = "zoomToFit";
 			}
 			
-			console.log (action);
-			
 			switch(action) {
 				case "select":
 				  	getMousePosition();
@@ -169,6 +163,8 @@
 					} else { 
 						for (var i=0; i<select.numHandles; i++) {
 							if (mouseTest(selectHandles[i])) {
+								console.log (selectHandles[i].relX);
+								console.log (selectHandles[i].relY);
 								startResize(selectHandles[i]);
 								return;
 							}
@@ -380,11 +376,16 @@
 		}
 		
 		function startResize (handle) {
+
+			
+			select.aspectMod = 1;
 			if (handle.relX == 0) {
+				select.aspectMod = handle.relY == 1 ? -1: 1
 				select.x += select.width;
 				select.width *= -1;
 			}
 			if (handle.relY == 0) {
+				select.aspectMod = handle.relX == 1 ? -1: 1
 				select.y += select.height;
 				select.height *= -1;
 			}
@@ -403,7 +404,7 @@
 			switch(restrictTo) {
 				case "horizontal":
 				  	select.width = mouse.x-select.x;
-							
+				
 					if (select.x - image.x + select.width > image.adjW) {
 						select.width = image.x + image.adjW - select.x;
 					} else if (select.x + select.width < image.x) {
@@ -423,6 +424,7 @@
 					var result = adjustToAspect(mouse.x-select.x, mouse.y-select.y, select.aspect);
 					select.width = result.width;
 					select.height = result.height;
+				
 					if (select.x - image.x + select.width > image.adjW) {
 						select.width = image.x + image.adjW - select.x;
 					} else if (select.x + select.width < image.x) {
@@ -443,6 +445,11 @@
 			if (select.width == 0 && select.height == 0) {
 				select.exists = false;
 			}
+			var tempSelect = translateCoords(select.x, select.y, select.width, select.height);
+			select.x = tempSelect.x;
+			select.y = tempSelect.y;
+			select.width = tempSelect.width;
+			select.height = tempSelect.height;
 			drawCanvas();
 		}
 		
