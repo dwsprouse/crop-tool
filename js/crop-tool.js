@@ -9,6 +9,7 @@
 		//Establishes canvas context
 		var canvas = document.getElementById('myCanvas');
 		var ctx = canvas.getContext('2d');
+	
 		canvas.width = window.innerWidth - 20;	
 		canvas.height = window.innerHeight - 120;
 		canvas.x = 0;
@@ -23,9 +24,8 @@
 			y: 0,
 			width: 0,
 			height: 0,
-			//aspect: (16/9),
-			exists: false,
-			aspectMod: 1
+			//aspect: (2/3),
+			exists: false
 		};
 		select.numHandles = select.aspect ? 4 : 8;
 		
@@ -71,14 +71,14 @@
 		image.img.onload = function(){
 			image.width = image.img.width;
 			image.height = image.img.height;
-			image.aspectRatio = image.width/image.height;
+			image.aspect = image.width/image.height;
 			
 			//Size and position image to fit image inside canvas
-			var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
-			image.adjW = zoomToFit.width;
-			image.adjH = zoomToFit.height;
-			image.x = zoomToFit.x;
-			image.y = zoomToFit.y;
+			var imageTemp = adjustToAspect(canvas.width, canvas.height, image.aspect);
+			image.adjW = imageTemp.width;
+			image.adjH = imageTemp.height;
+			image.x = imageTemp.x;
+			image.y = imageTemp.y;
 			
 			//Define initial zoom of image
 			image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
@@ -95,7 +95,8 @@
 			$('#info1').html('Select X:' + adjSelectX);	
 			$('#info2').html('Select Y:' + adjSelectY);
 			$('#info3').html('Select Width:' + adjSelectW);	
-			$('#info4').html('Select Height:' + adjSelectH);	
+			$('#info4').html('Select Height:' + adjSelectH);
+			$('#info5').html('Image Zoom:' + Math.round(image.zoom *1000)/10);	
 		});
 
 		//////////////
@@ -107,25 +108,12 @@
 			canvas.height = window.innerHeight - 120;
 			
 			if(document.getElementById('zoomToFit').checked) {
-				image.adjTempW = image.adjW;
-				image.adjTempH = image.adjH; 				
-			  	var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
-				image.adjW = zoomToFit.width;
-				image.adjH = zoomToFit.height;
-				var zoomDelta = image.adjW / image.adjTempW;
-				var selectOffsetX = (select.x - image.x) * zoomDelta;
-				var selectOffsetY = (select.y - image.y) * zoomDelta;
-				image.x = zoomToFit.x;
-				image.y = zoomToFit.y;
-				select.x = image.x + selectOffsetX;
-				select.y =  image.y + selectOffsetY;
-				select.width = select.width * zoomDelta;
-				select.height = select.height * zoomDelta;
-				image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
+				zoomToFit();
 		 	} else {
 				image.adjW = image.zoom * image.width; 
 				image.adjH = image.zoom * image.height;
-			
+				var selectOffsetX = image.x - select.x;
+				var selectOffsetY = image.y - select.y;
 				if (image.x < 0) {
 					image.x = (image.x + image.adjW) < canvas.width ? canvas.width - image.adjW : image.x;
 				} else {
@@ -137,6 +125,8 @@
 				} else {
 	 				image.y = image.adjH < canvas.height ? (canvas.height - image.adjH)/2 : 0; 
 				}
+				select.x = selectOffsetX - image.x;
+				select.y = selectOffsetY - image.y;
 				
 			}
 			
@@ -163,8 +153,6 @@
 					} else { 
 						for (var i=0; i<select.numHandles; i++) {
 							if (mouseTest(selectHandles[i])) {
-								console.log (selectHandles[i].relX);
-								console.log (selectHandles[i].relY);
 								startResize(selectHandles[i]);
 								return;
 							}
@@ -184,21 +172,7 @@
 					zoomCanvas(event);
 					break;	
 				case "zoomToFit":
-					image.adjTempW = image.adjW;
-					image.adjTempH = image.adjH; 				
-				  	var zoomToFit = adjustToAspect(canvas.width, canvas.height, image.aspectRatio);
-					image.adjW = zoomToFit.width;
-					image.adjH = zoomToFit.height;
-					var zoomDelta = image.adjW / image.adjTempW;
-					var selectOffsetX = (select.x - image.x) * zoomDelta;
-					var selectOffsetY = (select.y - image.y) * zoomDelta;
-					image.x = zoomToFit.x;
-					image.y = zoomToFit.y;
-					select.x = image.x + selectOffsetX;
-					select.y =  image.y + selectOffsetY;
-					select.width = select.width * zoomDelta;
-					select.height = select.height * zoomDelta;
-					image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
+					zoomToFit();
 					drawCanvas();
 					break;	
 			}
@@ -246,7 +220,7 @@
 				getMousePosition();
 				image.x = mouse.x + imgOffsetX;
 				image.y = mouse.y + imgOffsetY;
-				
+			
 				if (image.x < 0) {
 					if (image.adjW + image.x > canvas.width) {
 						image.x = image.x;
@@ -330,6 +304,27 @@
 			drawCanvas();
 		}
 		
+		///////////////////
+		/// Zoom To Fit ///
+		///////////////////
+		
+		function zoomToFit () {
+			var adjTempW = image.adjW,			
+		  		result = adjustToAspect(canvas.width, canvas.height, image.aspect);
+			image.adjW = result.width;
+			image.adjH = result.height;
+			var delta = image.adjW / adjTempW,
+				selectOffsetX = (select.x - image.x) * delta,
+				selectOffsetY = (select.y - image.y) * delta;
+			image.x = result.x;
+			image.y = result.y;
+			select.x = image.x + selectOffsetX;
+			select.y =  image.y + selectOffsetY;
+			select.width = select.width * delta;
+			select.height = select.height * delta;
+			image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
+		}
+		
 		//////////////
 		/// Select ///
 		//////////////
@@ -343,49 +338,34 @@
 				getMousePosition();
 				select.x = mouse.x + selectOffsetX;
 				select.y = mouse.y + selectOffsetY;
-				if (select.x - image.x + select.width > image.adjW) {
-					select.x = image.x + image.adjW - select.width;
-					selectOffsetX = select.x - mouse.x;
-				} else if (select.x < image.x) {
-					select.x = image.x;
-					selectOffsetX = select.x - mouse.x;
-				}
-				if (select.y - image.y + select.height > image.adjH) {
-					select.y = image.y + image.adjH - select.height;
-					selectOffsetY = select.y - mouse.y;
-				} else if (select.y < image.y) {
-					select.y = image.y;
-					selectOffsetY = select.y - mouse.y;
-				}
+				
+				var result = restrictXY (image, select, selectOffsetX, selectOffsetY);
+				select.x = result.x;
+				select.y = result.y;
+				selectOffsetX = result.offsetX;
+				selectOffsetY = result.offsetY;
+				
 				drawCanvas();
 			})
 		 	.bind("mouseup.move", function() {$(document).unbind(".move");});
 		}
 	
 		function startSelect () {
-			if (mouse.x >= image.x && 
-				mouse.y >= image.y && 
-				mouse.x <= (image.x + image.adjW) && 
-				mouse.y <= (image.y + image.adjH)) {
-					select.x = mouse.x;
-					select.y = mouse.y;
-					select.exists = true;
-					$(document).bind("mousemove.set", sizeSelect)
-							   .bind("mouseup.set", endSelect);
+			if (mouseTestZoom(image)) {
+				select.x = mouse.x;
+				select.y = mouse.y;
+				select.exists = true;
+				$(document).bind("mousemove.set", sizeSelect)
+						   .bind("mouseup.set", endSelect);
 			}
 		}
 		
 		function startResize (handle) {
-
-			
-			select.aspectMod = 1;
 			if (handle.relX == 0) {
-				select.aspectMod = handle.relY == 1 ? -1: 1
 				select.x += select.width;
 				select.width *= -1;
 			}
 			if (handle.relY == 0) {
-				select.aspectMod = handle.relX == 1 ? -1: 1
 				select.y += select.height;
 				select.height *= -1;
 			}
@@ -401,41 +381,30 @@
 	
 		function sizeSelect() {
 			getMousePosition();
+
 			switch(restrictTo) {
 				case "horizontal":
 				  	select.width = mouse.x-select.x;
-				
-					if (select.x - image.x + select.width > image.adjW) {
-						select.width = image.x + image.adjW - select.x;
-					} else if (select.x + select.width < image.x) {
-						select.width = image.x - select.x;
-					}
 					break;
 				case "vertical":
 					select.height = mouse.y-select.y;
-					
-					if (select.y - image.y + select.height > image.adjH) {
-						select.height = image.y + image.adjH - select.y;
-					} else if (select.y + select.height < image.y) {
-						select.height = image.y - select.y;
-					}
 					break;
 				default:
-					var result = adjustToAspect(mouse.x-select.x, mouse.y-select.y, select.aspect);
-					select.width = result.width;
-					select.height = result.height;
-				
-					if (select.x - image.x + select.width > image.adjW) {
-						select.width = image.x + image.adjW - select.x;
-					} else if (select.x + select.width < image.x) {
-						select.width = image.x - select.x;
-					}
-					if (select.y - image.y + select.height > image.adjH) {
-						select.height = image.y + image.adjH - select.y;
-					} else if (select.y + select.height < image.y) {
-						select.height = image.y - select.y;
-					}
+					select.width = mouse.x-select.x;
+					select.height = mouse.y-select.y;
+					break;
 			}
+
+			var result1 = restrictWH (image, select);
+			select.width = result1.width;
+			select.height = result1.height;
+		
+			if (select.aspect) {
+				var result2 = adjustToAspect(select.width, select.height, select.aspect);
+				select.width = result2.width;
+				select.height = result2.height;
+			}
+
 			drawCanvas();
 		}
 		
@@ -445,11 +414,11 @@
 			if (select.width == 0 && select.height == 0) {
 				select.exists = false;
 			}
-			var tempSelect = translateCoords(select.x, select.y, select.width, select.height);
-			select.x = tempSelect.x;
-			select.y = tempSelect.y;
-			select.width = tempSelect.width;
-			select.height = tempSelect.height;
+			var result = translateCoords(select.x, select.y, select.width, select.height);
+			select.x = result.x;
+			select.y = result.y;
+			select.width = result.width;
+			select.height = result.height;
 			drawCanvas();
 		}
 		
@@ -465,6 +434,42 @@
 		////////////
 		/// MATH ///
 		////////////
+		
+		//Restricts child width/height to scaled bounds of parent
+		function restrictWH (parent, child) {
+			if (child.x + child.width - parent.x > parent.adjW) {
+				child.width = parent.x + parent.adjW - child.x;
+			} else if (child.x + child.width < parent.x) {
+				child.width = parent.x - child.x;
+			}
+			if (child.y + child.height - parent.y > parent.adjH) {
+				child.height = parent.y + parent.adjH - child.y;
+			} else if (child.y + child.height < parent.y) {
+				child.height = parent.y - child.y;
+			}
+			var result = {width: child.width, height: child.height};
+			return result;
+		}
+		
+		//Restricts child x/y to scaled bounds of parent
+		function restrictXY (parent, child, childOffsetX, childOffsetY) {
+			if (child.x - parent.x + child.width > parent.adjW) {
+				child.x = parent.x + parent.adjW - child.width;
+				childOffsetX = child.x - mouse.x;
+			} else if (child.x < parent.x) {
+				child.x = parent.x;
+				childOffsetX = child.x - mouse.x;
+			}
+			if (child.y - parent.y + child.height > parent.adjH) {
+				child.y = parent.y + parent.adjH - child.height;
+				childOffsetY = child.y - mouse.y;
+			} else if (child.y < parent.y) {
+				child.y = parent.y;
+				childOffsetY = child.y - mouse.y;
+			}
+			var result = {x: child.x, y: child.y, offsetX: childOffsetX, offsetY: childOffsetY};
+			return result;
+		}
 		
 		//Determine relative x and y coordinates for child to parent
 		function parentChild (parent, child) {
@@ -487,7 +492,6 @@
 			var currentRatio = width / height,
 			    currentAbsRatio = Math.abs(currentRatio),
 				result = {width: width, height: height};
-
 			if(currentAbsRatio > targetRatio) {
 				result.width = Math.abs(height) * targetRatio * (width < 0 ? -1 : 1); // preserve sign
 				result.height = height;
@@ -509,6 +513,7 @@
 			mouse.y = event.pageY - offset.top;
 			mouse.x = (mouse.x < 0) ? 0 : (mouse.x > $(canvas).width) ? $(canvas).width : mouse.x;  
 		    mouse.y = (mouse.y < 0) ? 0 : (mouse.y > $(canvas).height) ? $(canvas).height : mouse.y;
+			
 		}
 		
 		//Determine if mouse is within rect
@@ -517,7 +522,15 @@
 				mouse.y >= rect.y && 
 				mouse.x <= (rect.x + rect.width) && 
 				mouse.y <= (rect.y + rect.height);
-		}	
+		}
+		
+		//Determine if mouse is within rect
+		function mouseTestZoom(rect) {
+			return mouse.x >= rect.x && 
+				mouse.y >= rect.y && 
+				mouse.x <= (rect.x + rect.adjW) && 
+				mouse.y <= (rect.y + rect.adjH);
+		}
 		
 		//Determine position of select handles
 		function handlePosition() {
