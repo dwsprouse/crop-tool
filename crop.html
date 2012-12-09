@@ -2,6 +2,7 @@
 <html>
 <head>
 	<title>Canvas Test</title>
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
 	<script src="js/jquery-1.8.3.min.js" type="text/javascript"></script>
 	<style type="text/css" media="screen">
 		body {
@@ -10,22 +11,25 @@
 	</style>
 </head>
 <body>
-	<canvas id="myCanvas" style="border:1px solid #000000;">></canvas>
-	<label for="Translate">Translate</label>
-	<input type="radio" name="action" id="translate" value="Translate" />
-	<label for="Zoom">Zoom</label>
-	<input type="radio" name="action" id="zoom" value="Zoom" />
-	<label for="zoomToFit">Zoom To Fit</label>
-	<input type="radio" name="action" id="zoomToFit" value="zoomToFit" />
-	<label for="Select">Select</label>
-	<input type="radio" name="action" id="select" value="Select" />
-	<div id="info1"></div>
-	<div id="info2"></div>
-	<div id="info3"></div>
-	<div id="info4"></div>
-	<div id="info5"></div>
-	<div id="info6"></div>
-	<div id="info7"></div>
+	<div id="left_panel">
+		<canvas id="map" width=180 height=180></canvas>
+		<div id="controls">
+			<label for="Translate">Translate</label>
+			<input type="radio" name="action" id="translate" value="Translate" /><p>
+			<label for="Zoom">Zoom</label>
+			<input type="radio" name="action" id="zoom" value="Zoom" /><p>
+			<label for="zoomToFit">Zoom To Fit</label>
+			<input type="radio" name="action" id="zoomToFit" value="zoomToFit" /><p>
+			<label for="Select">Select</label>
+			<input type="radio" name="action" id="select" value="Select" /><p>
+			<div id="info1"></div>
+			<div id="info2"></div>
+			<div id="info3"></div>
+			<div id="info4"></div>
+			<div id="info5"></div>
+		</div>
+	</div>
+	<canvas id="myCanvas"></canvas>
 	<script src="js/crop-tool.js" type="text/javascript"></script>
 </body>
 </html>

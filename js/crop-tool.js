@@ -10,13 +10,25 @@
 		var canvas = document.getElementById('myCanvas');
 		var ctx = canvas.getContext('2d');
 	
-		canvas.width = window.innerWidth - 20;	
-		canvas.height = window.innerHeight - 120;
+		canvas.width = window.innerWidth - 210;	
+		canvas.height = window.innerHeight - 20;
 		canvas.x = 0;
 		canvas.y = 0;
-				
+			
+		//Establishes map canvas
+		var map = document.getElementById('map');
+		var ctx2 = map.getContext('2d');
+			
 		var restrictTo = "none";
 		var action = "";
+		
+		//Define view for map
+		var view = {
+			x: 0,
+			y: 0,
+			width: 0,
+			height: 0
+		}
 		
 		//Define select
 		var select = {
@@ -74,11 +86,18 @@
 			image.aspect = image.width/image.height;
 			
 			//Size and position image to fit image inside canvas
-			var imageTemp = adjustToAspect(canvas.width, canvas.height, image.aspect);
-			image.adjW = imageTemp.width;
-			image.adjH = imageTemp.height;
-			image.x = imageTemp.x;
-			image.y = imageTemp.y;
+			var imageTemp1 = adjustToAspect(canvas.width, canvas.height, image.aspect);
+			image.adjW = imageTemp1.width;
+			image.adjH = imageTemp1.height;
+			image.x = imageTemp1.x;
+			image.y = imageTemp1.y;
+			
+			//Size and position image to fit image inside map
+			var imageTemp2 = adjustToAspect(map.width, map.height, image.aspect);
+			image.mapW = imageTemp2.width;
+			image.mapH = imageTemp2.height;
+			image.mapX = imageTemp2.x;
+			image.mapY = imageTemp2.y;
 			
 			//Define initial zoom of image
 			image.zoom = image.adjW/image.width; // or could be = image.adjH/image.height;
@@ -104,8 +123,8 @@
 		//////////////
 		
 		$(window).resize(function() {
-			canvas.width = window.innerWidth - 20;	
-			canvas.height = window.innerHeight - 120;
+			canvas.width = window.innerWidth - 210;	
+			canvas.height = window.innerHeight - 20;
 			
 			if(document.getElementById('zoomToFit').checked) {
 				zoomToFit();
@@ -184,9 +203,23 @@
 		
 		function drawCanvas() {
 			ctx.save();
+			ctx2.save();
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx2.clearRect(0, 0, map.width, map.height);
+			
 			//ctx.translate(canvas.x , canvas.y);
 			ctx.drawImage(image.img, image.x, image.y, image.adjW, image.adjH);
+		
+			ctx2.drawImage(image.img, image.mapX, image.mapY, image.mapW, image.mapH);
+			Map();
+			ctx2.fillStyle = "rgba(0, 0, 0, 0.5)";
+			ctx2.fillRect(0, 0, view.x,  map.height);
+			ctx2.fillRect(view.x, 0, view.width, view.y);
+			ctx2.fillRect(view.x + view.width, 0, map.width - view.width - view.x, map.height);
+			ctx2.fillRect(view.x, view.y + view.height, view.width, map.height - view.height - view.y);
+			ctx2.strokeStyle = "#ffffff";
+			ctx2.strokeRect(view.x + .5, view.y + .5, view.width, view.height);
+				
 			if (select.exists){
 				ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -202,6 +235,19 @@
 				}
 			}
 			ctx.restore();
+			ctx2.restore();
+		}
+		
+		///////////
+		/// Map ///
+		///////////
+		
+		function Map() {
+			var delta = image.mapW/image.adjW;
+			view.x = Math.round(image.mapX + (canvas.x - image.x) * delta);
+			view.y = Math.round(image.mapY + (canvas.y - image.y) * delta);
+			view.width = Math.round(canvas.width * delta);
+			view.height = Math.round(canvas.height * delta);
 		}
 		
 		/////////////////

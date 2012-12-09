@@ -1,0 +1,24 @@
+body {
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+}
+#left_panel {
+	width: 180px;
+	height: 500px;
+	margin: 10px 0px 0px 10px;
+	position:fixed;
+}
+#controls {
+	margin: 190px 0px 0px 10px;
+	position:fixed;
+}
+#myCanvas {
+	border:1px solid #000000;
+	position:fixed;
+	margin: 10px 10px 10px 200px;
+}
+#map {
+	border:1px solid #000000;
+	margin: -1px 0px 190px -1px;
+	position:fixed;
+}
